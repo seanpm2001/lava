@@ -576,7 +576,7 @@ class LavaPaths(object):
             tar_files = subprocess.check_output(['tar', 'tf',
                                                  project['tarfile']],
                                                 stderr=sys.stderr)
-            self.source_root = tar_files.splitlines()[0].split(os.path.sep)[0]
+            self.source_root = tar_files.decode().splitlines()[0].split(os.path.sep)[0]
         self.queries_build = join(self.top_dir, self.source_root)
         self.bugs_top_dir = join(self.top_dir, 'bugs')
 
