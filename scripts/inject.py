@@ -2,7 +2,6 @@
 
 import argparse
 import atexit
-import json
 import lockfile
 import os
 import signal

@@ -1,8 +1,6 @@
-import sys
-import yaml
-import re
-import pickle
 import argparse
+import pickle
+import yaml
 
 debug = True
 

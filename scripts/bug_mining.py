@@ -6,12 +6,9 @@ json project file.
 Second arg is an input file you want to run, under panda, to get taint info.
 """
 
-from __future__ import print_function
-
 import os
 import sys
 import time
-import pipes
 import shlex
 import shutil
 import subprocess
@@ -21,8 +18,6 @@ from colorama import Style
 
 from errno import EEXIST
 
-from os.path import join
-from os.path import abspath
 from os.path import dirname
 from os.path import basename
 
@@ -35,7 +30,6 @@ from vars import parse_vars
 from os.path import abspath, join
 from pandare import Panda
 from pandare.extras import dwarfdump
-
 
 host_json = abspath(sys.argv[1])
 project_name = sys.argv[2]
@@ -57,12 +51,13 @@ curtail = 0
 installdir = None
 command_args = None
 
+
 # Replace create_recording in first link
 # https://github.com/panda-re/panda/blob/dev/panda/scripts/run_guest.py#L151-L189
 # https://github.com/panda-re/panda/blob/dev/panda/python/core/pandare/panda.py#L2595-L2645
 @panda.queue_blocking
 def create_recording():
-    global command_args 
+    global command_args
     global installdir
     print("args", command_args)
     print("install dir", installdir)
@@ -133,8 +128,8 @@ installdir = join(sourcedir, 'lava-install')
 input_file_guest = join(installdir, input_file_base)
 command_args = shlex.split(
     project['command'].format(
-    install_dir=pipes.quote(installdir),
-    input_file=input_file_guest))
+        install_dir=shlex.quote(installdir),
+        input_file=input_file_guest))
 shutil.copy(input_file, installdir)
 
 panda.run()
@@ -183,47 +178,46 @@ panda.set_pandalog(pandalog)
 
 panda.load_plugin("pri")
 panda.load_plugin("dwarf2",
-                args={
-                    'proc': proc_name,
-                    'g_debugpath': installdir,
-                    'h_debugpath': installdir
-                })
+                  args={
+                      'proc': proc_name,
+                      'g_debugpath': installdir,
+                      'h_debugpath': installdir
+                  })
 # pri_taint is almost same as Zhenghao's hypercall
 # Chaffx64 branch says these are needed?
 # if panda.arch != 'i386':
 #    panda.load_plugin('hypercall')
 #    panda.load_plugin('stackprob')
-panda.load_plugin("taint2", 
-                args={
-                    'enable_hypercalls' : True,
-                    'no_tp': True
-                })
+panda.load_plugin("taint2",
+                  args={
+                      'enable_hypercalls': True,
+                      'no_tp': True
+                  })
 panda.load_plugin("tainted_branch")
 panda.load_plugin("pri_taint", args={
-        'hypercall': True,
-        'chaff': False
+    'hypercall': True,
+    'chaff': False
 })
 
 if 'use_stdin' in project and project['use_stdin']:
-    panda.load_plugin("file_taint", 
-                  args={
-                      'filename' : input_file_guest,
-                      'pos': True,
-                      'cache_process_details_on_basic_block': True,
-                      'first_instr' : 1,
-                      'use_stdin' : proc_name,
-                      'verbose' : True
-                  })
+    panda.load_plugin("file_taint",
+                      args={
+                          'filename': input_file_guest,
+                          'pos': True,
+                          'cache_process_details_on_basic_block': True,
+                          'first_instr': 1,
+                          'use_stdin': proc_name,
+                          'verbose': True
+                      })
 else:
-    panda.load_plugin("file_taint", 
-                  args={
-                      'filename' : input_file_guest,
-                      'pos': True,
-                      'cache_process_details_on_basic_block': True,
-                      'enable_taint_on_open': True,
-                      'verbose' : True  
-                })
-
+    panda.load_plugin("file_taint",
+                      args={
+                          'filename': input_file_guest,
+                          'pos': True,
+                          'cache_process_details_on_basic_block': True,
+                          'enable_taint_on_open': True,
+                          'verbose': True
+                      })
 
 # Default name is 'recording'
 # https://github.com/panda-re/panda/blob/dev/panda/python/core/pandare/panda.py#L2595
