@@ -37,8 +37,7 @@ project_name = sys.argv[2]
 project = parse_vars(host_json, project_name)
 qemu_path = project['qemu']
 
-panda = Panda(arch=qemu_path.split('-')[-1],
-              generic=qemu_path.split('-')[-1],
+panda = Panda(generic=qemu_path.split('-')[-1],
               expect_prompt=project['expect_prompt'])
 
 debug = True
@@ -175,8 +174,13 @@ dwarfdump.parse_dwarfdump(dwarfout, binpath)
 # Based on this example:
 # https://github.com/panda-re/panda/blob/dev/panda/python/examples/file_taint/file_taint.py
 panda.set_pandalog(pandalog)
-
 panda.load_plugin("pri")
+panda.load_plugin("taint2",
+                  args={
+                      'no_tp': True
+                  })
+panda.load_plugin("tainted_branch")
+
 panda.load_plugin("dwarf2",
                   args={
                       'proc': proc_name,
@@ -188,18 +192,23 @@ panda.load_plugin("dwarf2",
 # if panda.arch != 'i386':
 #    panda.load_plugin('hypercall')
 #    panda.load_plugin('stackprob')
-panda.load_plugin("taint2",
-                  args={
-                      'enable_hypercalls': True,
-                      'no_tp': True
-                  })
-panda.load_plugin("tainted_branch")
-panda.load_plugin("pri_taint", args={
-    'hypercall': True,
-    'chaff': False
-})
 
+
+print(project)
+#print('use_stdin' in project)
+#print(project['use_stdin'])
 if 'use_stdin' in project and project['use_stdin']:
+    print("Using stdin for taint analysis")
+    panda.load_plugin("file_taint",
+                      args={
+                          'filename': input_file_guest,
+                          'pos': True,
+                          'cache_process_details_on_basic_block': True,
+                          'enable_taint_on_open': True,
+                          'verbose': True
+                      })
+else:
+    print("Using open for taint analysis")
     panda.load_plugin("file_taint",
                       args={
                           'filename': input_file_guest,
@@ -209,15 +218,11 @@ if 'use_stdin' in project and project['use_stdin']:
                           'use_stdin': proc_name,
                           'verbose': True
                       })
-else:
-    panda.load_plugin("file_taint",
-                      args={
-                          'filename': input_file_guest,
-                          'pos': True,
-                          'cache_process_details_on_basic_block': True,
-                          'enable_taint_on_open': True,
-                          'verbose': True
-                      })
+
+panda.load_plugin("pri_taint", args={
+    'hypercall': True,
+    'chaff': False
+})
 
 # Default name is 'recording'
 # https://github.com/panda-re/panda/blob/dev/panda/python/core/pandare/panda.py#L2595
